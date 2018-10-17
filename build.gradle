@@ -1,0 +1,52 @@
+/*The root build.gradle is often used to share common configuration between the child projects, for
+example by applying the same sets of plugins and dependencies to all the child projects. It can also
+be used to configure individual subprojects when it is preferable to have all the configuration in
+one place. This means you should always check the root build file when discovering how a
+particular subproject is being configured.*/
+plugins {
+    id 'java'
+}
+
+group 'com.wcx.gradle'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+//获取properties gradle -q -PcommandLineProjectProp=commandLineProjectPropValue -Dorg.gradle.project.systemProjectProp=systemPropertyValue printProps
+task printProps {
+    doLast {
+        println commandLineProjectProp
+        println gradlePropertiesProp
+        println systemProjectProp
+        println System.properties['system']
+    }
+}
+// Set Java compile options for JavaCompile tasks
+apply plugin: "java"
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-Xdoclint:none", "-Xlint:none", "-nowarn"]
+}
+
+/*Configuring a task using project properties
+It’s possible to change the behavior of a task based on project properties specified at invocationtime.
+Suppose you’d like to ensure release builds are only triggered by CI. A simple way to handle this is
+through an isCI project property.
+ gradle performRelease -PisCI=true --quiet*/
+task performRelease {
+    doLast {
+        if (project.hasProperty("isCI")) {
+            println("Performing release actions")
+        } else {
+            throw new InvalidUserDataException("Cannot perform release outside of CI")
+        }
+    }
+}
+

@@ -1,0 +1,67 @@
+gradle command-line structure
+    gradle [taskName...] [--option-name...]
+Executing tasks in multi-project builds
+    In a multi-project build, subproject tasks can be executed with ":" separating subproject name and
+    task name. The following are equivalent when run from the root project.
+    > gradle :mySubproject:taskName
+    ❯ gradle mySubproject:taskName
+Executing multiple tasks
+    gradle task1 task2
+exclude task
+    gradle -x test
+Computing all outputs
+    It is common in Gradle builds for the build task to designate assembling all outputs and running all
+    checks.
+    ❯ gradle build
+Running all checks
+    It is common for all verification tasks, including tests and linting, to be executed using the check
+    task.
+    ❯ gradle check
+Cleaning outputs
+    You can delete the contents of the build directory using the clean task, though doing so will cause
+    pre-computed outputs to be lost, causing significant additional build time for the subsequent task
+    execution.
+    ❯ gradle clean
+Listing tasks
+    Running gradle tasks gives you a list of the main tasks of the selected project. This report shows the
+    default tasks for the project, if any, and a description for each task.
+    ❯ gradle tasks
+Listing project dependencies
+    Running gradle dependencies gives you a list of the dependencies of the selected project, broken
+    down by configuration. For each configuration, the direct and transitive dependencies of that
+    configuration are shown in a tree. Below is an example of this report:
+    ❯ gradle dependencie
+Listing project properties
+    Running gradle properties gives you a list of the properties of the selected project.
+    Example: Information about properties
+    Output of gradle -q api:properties
+System properties
+    Using the -D command-line option, you can pass a system property to the JVM which runs Gradle.
+    The -D option of the gradle command has the same effect as the -D option of the java command.
+    You can also set system properties in gradle.properties files with the prefix systemProp.
+    Example: Specifying system properties in gradle.properties
+        systemProp.gradle.wrapperUser=myuser
+        systemProp.gradle.wrapperPassword=mypassword
+    The following system properties are available. Note that command-line options take precedence
+    over system properties.
+        gradle.wrapperUser=(myuser)
+Project properties
+    You can add properties directly to your Project object via the -P command line option.
+    Gradle can also set project properties when it sees specially-named system properties or
+    environment variables. If the environment variable name looks like ORG_GRADLE_PROJECT
+    prop=somevalue, then Gradle will set a prop property on your project object, with the value of
+    somevalue. Gradle also supports this for system properties, but with a different naming pattern,
+    which looks like org.gradle.project.prop. Both of the following will set the foo property on your
+    Project object to "bar".
+    Example: Setting a project property via gradle.properties
+        org.gradle.project.foo=bar
+Upgrading the Wrapper version
+    > ./gradlew wrapper --gradle-version 4.2.1
+ Checking the Wrapper version after upgrading
+     ./gradlew -v
+
+
+
+
+
+
