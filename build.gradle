@@ -20,6 +20,13 @@ plugins {
     Applying the Application plugin also implicitly applies the Distribution plugin. A main distribution is
     created that packages up the application, including code dependencies and generated start scripts.*/
     id 'application'
+    /*what to publish:For example, a publication destined for a Maven repository includes one or more artifacts
+    typically built by the project — plus a POM file describing the primary artifact and its
+    dependencies. The primary artifact is typically the project’s production JAR and secondary
+    artifacts might consist of "-sources" and "-javadoc" JARs.
+    how to publish: task PublishToMavenRepository  */
+    id 'maven-publish'
+
 }
 //Applying a script plugin,load another gradle file
 apply from: 'other.gradle'
@@ -124,7 +131,7 @@ subprojects {
 jar {
     manifest {
         attributes 'Implementation-Title': 'Gradle Quickstart',
-                'Implementation-Version': version,'name':'wang'
+                'Implementation-Version': version, 'name': 'wang'
     }
 }
 //publish to a local directory
@@ -154,6 +161,132 @@ subprojects {
         manifest.attributes provider: 'gradle'
     }
 }
+//publish
+//Adding custom artifacts to a publication
+/*Users often need to include additional artifacts with a publication, one of the most common
+examples being that of "-sources" and "-javadoc" JARs for JVM libraries
+The following sample configures "-sources" and "-javadoc" JARs for a Java project and attaches them
+to the main (Maven) publication, i.e. the production JAR:*/
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+/*we want to publish the project’s production JAR file — the one produced by the
+jar task — to a custom, Maven repository. We do that with the following publishing {} block, which
+is backed by PublishingExtension:*/
+publishing {
+    publications {
+        /*This defines a publication called "myLibrary" that can be published to a Maven repository by virtue
+        of its type: MavenPublication. This publication consists of just the production JAR artifact and its
+        metadata, which combined are represented by the java component of the project.*/
+        myLibrary(MavenPublication) {
+            /*Components are the standard way of defining a publication. They are provided by
+            plugins, usually of the language or platform variety. For example, the Java Plugin
+            defines the components.java SoftwareComponent, while the War Plugin defines
+            components.web.*/
+            from components.java
+            /*The artifact() method accepts archive tasks as an argument — like sourcesJar in the sample —
+            as well as any type of argument accepted by Project.file(java.lang.Object), such as a File
+            instance or string file path.*/
+            artifact sourcesJar
+            artifact javadocJar
+
+            /*Identity values in the generated POM
+            The attributes of the generated POM file will contain identity values derived from the following
+            project properties:
+            • groupId - Project.getGroup()
+            • artifactId - Project.getName()
+            • version - Project.getVersion()
+            Overriding the default identity values is easy: simply specify the groupId, artifactId or version
+            attributes when configuring the MavenPublication.*/
+            groupId = 'org.gradle.sample'
+            artifactId = 'project1-sample'
+            version = '1.1'
+
+            /*Customizing the generated POM
+            The generated POM file can be customized before publishing. For example, when publishing a
+            library to Maven Central you will need to set certain metadata. The Maven Publish Plugin provides
+            a DSL for that purpose. Please see MavenPom in the DSL Reference for the complete documentation
+            of available properties and methods. The following sample shows how to use the most common
+            ones:*/
+            pom {
+                name = 'My Library'
+                description = 'A concise description of my library'
+                url = 'http://www.example.com/library'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'johnd'
+                        name = 'John Doe'
+                        email = 'john.doe@example.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://example.com/my-library.git'
+                    developerConnection = 'scm:git:ssh://example.com/my-library.git'
+                    url = 'http://example.com/my-library/'
+                }
+            }
+
+
+        }
+    }
+    /*Gradle will then
+    create a dedicated publishMyLibraryPublicationToMyRepoRepository task that does just that. Its name
+    is based on the template publishPubNamePublicationToRepoNameRepository.
+    You can either execute the individual publishing tasks directly, or you can execute publish, which
+    will run all the available publishing tasks. In this example, publish will just run
+    publishMyLibraryPublicationToMavenRepository.*/
+    repositories {
+        maven {
+            /* The example also defines a file-based Maven repository with the name "myRepo". Such a file-based
+             repository is convenient for a sample, but real-world builds typically work with HTTPS-based
+             repository servers, such as Maven Central or an internal company server.*/
+            /*You may define one, and only one, repository without a name. This translates to an
+            implicit name of "Maven" for Maven repositories and "Ivy" for Ivy repositories. All
+            other repository definitions must be given an explicit name.*/
+            name = 'myRepo'
+            //// change to point to your repo, e.g. http://my.org/repo
+            url = "file://${buildDir}/repo"
+
+            //Snapshot and release repositories
+            /*It is a common practice to publish snapshots and releases to different Maven repositories. A simple
+            way to accomplish this is to configure the repository URL based on the project version. The
+            following sample uses one URL for versions that end with "SNAPSHOT" and a different URL for the
+            rest:*/
+            def releasesRepoUrl = "$buildDir/repo/releases"
+            def snapshotsRepoUrl = "$buildDir/repo/snapshots"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            //Configuring repository URL based on project property
+            /*Similarly, you can use a project or system property to decide which repository to publish to. The
+            following example uses the release repository if the project property release is set, such as when a
+            user runs gradle -Prelease publish:*/
+            url = project.hasProperty('release') ? releasesRepoUrl : snapshotsRepoUrl
+
+            //publish to maven local
+            /*For integration with a local Maven installation, it is sometimes useful to publish the module into the
+            Maven local repository (typically at $USER_HOME/.m2/repository), along with its POM file and other
+            metadata. In Maven parlance, this is referred to as 'installing' the module.
+            The Maven Publish Plugin makes this easy to do by automatically creating a PublishToMavenLocal
+            task for each MavenPublication in the publishing.publications container. The task name follows
+            the pattern of publishPubNamePublicationToMavenLocal. Each of these tasks is wired into the
+            publishToMavenLocal aggregate task. You do not need to have mavenLocal() in your
+            publishing.repositories section.*/
+
+        }
+    }
+}
+
 
 
 
