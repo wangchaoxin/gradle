@@ -1,4 +1,6 @@
 // The project’s settings file
 rootProject.name = 'gradle-start'
 include 'common'
+include 'api'
+include 'app'
 

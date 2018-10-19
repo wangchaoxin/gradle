@@ -5,19 +5,59 @@ one place. This means you should always check the root build file when discoveri
 particular subproject is being configured.*/
 plugins {
     id 'java'
+    /*The Java Library plugin expands the capabilities of the Java plugin by providing specific knowledge
+    about Java libraries. In particular, a Java library exposes an API to consumers (i.e., other projects
+    using the Java or the Java Library plugin). All the source sets, tasks and configurations exposed by
+    the Java plugin are implicitly available when using this plugin.*/
+    /*The key difference between the standard Java plugin and the Java Library plugin is that the latter
+    introduces the concept of an API exposed to consumers*/
+    id 'java-library'
+    /*The Application plugin facilitates creating an executable JVM application. It makes it easy to start
+    the application locally during development, and to package the application as a TAR and/or ZIP
+    including operating system specific start scripts.
+            Applying the Application plugin also implicitly applies the Java plugin. The main source set is
+    effectively the “application”.
+    Applying the Application plugin also implicitly applies the Distribution plugin. A main distribution is
+    created that packages up the application, including code dependencies and generated start scripts.*/
+    id 'application'
 }
-
+//Applying a script plugin,load another gradle file
+apply from: 'other.gradle'
 group 'com.wcx.gradle'
 version '1.0-SNAPSHOT'
+//The only mandatory configuration for the plugin is the specification of the main class
+mainClassName = 'com.wcx.gradle.start.app'
+/*If your application’s start scripts should be in a different directory than bin, you can configure the
+executableDir property*/
+/*You can run gradle installDist to create an image of the application in app/install/projectName.
+  You can run gradle distZip to create a ZIP containing the distribution, gradle distTar to create an
+application TAR or gradle assemble to app both*/
+//Static files to be added to the distribution can be simply added to src/dist.
+executableDir = "custom_bin_dir"
 
+//Defines the minimum JVM version your code should run on, i.e. it determines the version of byte
+//code the compiler generates.
 sourceCompatibility = 1.8
+//Defines the minimum JVM version your code should run on, i.e. it determines the version of byte
+//code the compiler generates.
+targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    /*compileOnly — for dependencies that are necessary to compile your production code but
+    shouldn’t be part of the runtime classpath
+    • implementation (supersedes compile) — used for compilation and runtime
+    • runtimeOnly (supersedes runtime) — only used at runtime, not for compilation*/
     testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    /*Dependencies appearing in the api configurations will be transitively exposed to consumers of the
+    library, and as such will appear on the compile classpath of consumers. Dependencies found in the
+    implementation configuration will, on the other hand, not be exposed to consumers:*/
+    api 'commons-httpclient:commons-httpclient:3.1'
+    implementation 'org.apache.commons:commons-lang3:3.5'
 }
 
 //获取properties gradle -q -PcommandLineProjectProp=commandLineProjectPropValue -Dorg.gradle.project.systemProjectProp=systemPropertyValue printProps
@@ -49,4 +89,75 @@ task performRelease {
         }
     }
 }
+//A task should define a group and description.
+task generateDocs {
+    group = 'Documentation'
+    description = 'Generates the HTML documentation for this project.'
+    doLast {
+        // action implementation
+    }
+}
+/*Project evaluation
+You can receive a notification immediately before and after a project is evaluated. This can be used
+to do things like performing additional configuration once all the definitions in a build script have
+been applied, or for some custom logging or profiling.
+Below is an example which adds a test task to each project which has a hasTests property value of
+true.*/
+//Adding of test task to each project which has certain property set
+///gradle test
+/*def hasTests=false
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasTests) {
+            println "Adding test task to $project"
+            project.task('test') {
+                doLast {
+                    println "Running tests for $project"
+                }
+            }
+        }
+    }
+}*/
+//Customization of MANIFEST.MF
+//You can use gradle properties to list the properties of a project. This will allow you to
+//see the properties added by the Java plugin, and their default values.
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Quickstart',
+                'Implementation-Version': version,'name':'wang'
+    }
+}
+//publish to a local directory
+//修改uploadArchives 默认task的属性
+uploadArchives {
+    repositories {
+        flatDir {
+            dirs 'repos'
+        }
+    }
+}
+//Multi-project Java build
+/*the root project is like a container and the subprojects method iterates
+over the elements of this container - the projects in this instance - and injects the specified
+configuration. This way we can easily define the manifest content for all archives, and some
+common dependencies:*/
+subprojects {
+    apply plugin: 'java'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        testCompile 'junit:junit:4.12'
+    }
+    version = '1.0'
+    jar {
+        manifest.attributes provider: 'gradle'
+    }
+}
+
+
+
+
+
+
 

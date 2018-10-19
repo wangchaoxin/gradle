@@ -1,0 +1,98 @@
+plugins {
+    id 'java'
+}
+
+group 'com.ncs.vit.vms'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+subprojects {
+    afterEvaluate {
+        repositories {
+            jcenter()
+            maven {
+                url mavenRepoUrl
+                credentials {
+                    username mavenRepoUser
+                    password mavenRepoPass
+                }
+            }
+        }
+
+        plugins.withType(JavaPlugin) {
+            archivesBaseName = jarName
+            sourceCompatibility = '1.8'
+            targetCompatibility = '1.8'
+
+            compileJava {
+                options.encoding = 'UTF-8'
+                if (targetCompatibility == '1.8') {
+                    exclude '**/module-info.java'
+                }
+            }
+        }
+
+        plugins.withType(ApplicationPlugin) {
+            mainClassName = mainClass
+
+            jar {
+                manifest {
+                    attributes(
+                            'Implementation-Title': title,
+                            'Implementation-Version': version,
+                            'Main-Class': mainClass,
+                            'Class-Path': classPath
+                    )
+                }
+            }
+        }
+
+        plugins.withType(JavaLibraryPlugin) {
+            jar {
+                manifest {
+                    attributes(
+                            'Automatic-Module-Name': moduleName,
+                            'Implementation-Title': title,
+                            'Implementation-Version': version
+                    )
+                }
+            }
+        }
+
+        plugins.withType(DistributionPlugin) {
+            distributions {
+                main {
+                    baseName = jarName
+                }
+            }
+        }
+
+        plugins.withType(MavenPublishPlugin) {
+            publishing {
+                publications {
+                    maven(MavenPublication) {
+                        artifactId jarName
+                        from components.java
+                    }
+                }
+                repositories {
+                    maven {
+                        url mavenRepoUrl
+                        credentials {
+                            username mavenRepoUser
+                            password mavenRepoPass
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

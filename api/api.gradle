@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+group 'com.wcx.gradle'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //Dependencies between projects
+    /*You can add dependencies between projects in the same api, so that, for example, the JAR file of
+    one project is used to compile another project. In the api api file we will add a dependency on the
+    shared project. Due to this dependency, Gradle will ensure that project shared always gets built
+    before project api*/
+    compile project(':common')
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

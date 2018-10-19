@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    /*The Application plugin facilitates creating an executable JVM application. It makes it easy to start
+    the application locally during development, and to package the application as a TAR and/or ZIP
+    including operating system specific start scripts.
+            Applying the Application plugin also implicitly applies the Java plugin. The main source set is
+    effectively the “application”.
+    Applying the Application plugin also implicitly applies the Distribution plugin. A main distribution is
+    created that packages up the application, including code dependencies and generated start scripts.*/
+    id 'application'
+}
+//The only mandatory configuration for the plugin is the specification of the main class
+mainClassName = 'com.wcx.gradle.app'
+
+/*If your application’s start scripts should be in a different directory than bin, you can configure the
+executableDir property*/
+/*You can run gradle installDist to create an image of the application in app/install/projectName.
+  You can run gradle distZip to create a ZIP containing the distribution, gradle distTar to create an
+application TAR or gradle assemble to app both*/
+//Static files to be added to the distribution can be simply added to src/dist.
+executableDir = "custom_bin_dir"
+
+
+
+group 'com.wcx.gradle'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
