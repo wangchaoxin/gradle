@@ -28,6 +28,12 @@ plugins {
     id 'maven-publish'
 
 }
+configurations.all {
+    //Controlling dependency caching programmatically
+    //By default, Gradle caches dynamic versions for 24 hours. To change how long Gradle will cache the
+    //resolved version for a dynamic version, use
+    resolutionStrategy.cacheDynamicVersionsFor 10, 'minutes'
+}
 //Applying a script plugin,load another gradle file
 apply from: 'other.gradle'
 group 'com.wcx.gradle'
@@ -51,7 +57,44 @@ targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    //JCenter Maven repository
+    //Bintray's JCenter is an up-to-date collection of all popular Maven OSS artifacts, including artifacts
+    //published directly to Bintray.
+    jcenter()
+    /*Gradle can consume dependencies available in the local Maven repository. Declaring this
+    repository is beneficial for teams that publish to the local Maven repository with one project and
+    consume the artifacts by Gradle in another project.
+    Gradle stores resolved dependencies in its own cache. A build does not need to
+    declare the local Maven repository even if you resolve dependencies from a Mavenbased,remote repository.
+    To declare the local Maven cache as a repository add this to your build script*/
+    mavenLocal()
+
+    /*Custom Maven repositories
+    Many organizations host dependencies in an in-house Maven repository only accessible within the
+    company’s network. Gradle can declare Maven repositories by URL.*/
+    /*maven {
+        url "http://repo.mycompany.com/maven2"
+        //You can specify credentials for Maven repositories secured by basic authentication using
+        //api:org.gradle.api.credentials.PasswordCredentials[].
+        credentials {
+          username "user"
+          password "password"
+          }
+
+    }*/
+
+
 }
+// you can exclude the transitive dependencies for a particular configuration
+//configurations.all 设置所有
+configurations {
+    implementation {
+        exclude group: 'javax.jms', module: 'jms'
+        exclude group: 'com.sun.jdmk', module: 'jmxtools'
+        exclude group: 'com.sun.jmx', module: 'jmxri'
+    }
+}
+
 
 dependencies {
     /*compileOnly — for dependencies that are necessary to compile your production code but
@@ -65,6 +108,40 @@ dependencies {
     implementation configuration will, on the other hand, not be exposed to consumers:*/
     api 'commons-httpclient:commons-httpclient:3.1'
     implementation 'org.apache.commons:commons-lang3:3.5'
+
+    /*Declaring a dynamic version
+    Projects might adopt a more aggressive approach for consuming dependencies to modules. For
+    example you might want to always integrate the latest version of a dependency to consume cutting
+    edge features at any given time. A dynamic version allows for resolving the latest version or the
+    latest version of a version range for a given module.*/
+    implementation 'org.springframework:spring-web:5.+'
+    //Declaring a changing version
+    /*By default, Gradle caches changing versions of dependencies for 24 hours. Within this time frame,
+    Gradle does not try to resolve newer versions from the declared repositories.*/
+    //implementation 'org.springframework:spring-web:5.0.3.BUILD-SNAPSHOT'
+
+    //Excluding transitive module dependencies
+    //Exclusions need to spelled out as a key/value pair via the attributes group and/or module.
+    implementation('log4j:log4j:1.2.15') {
+        exclude group: 'javax.jms', module: 'jms'
+        exclude group: 'com.sun.jdmk', module: 'jmxtools'
+        exclude group: 'com.sun.jmx', module: 'jmxri'
+    }
+    //Enforcing a particular dependency version
+    /*Gradle resolves any dependency version conflicts by selecting the latest version found in the
+    dependency graph. Some projects might need to divert from the default behavior and enforce an
+    earlier version of a dependency e.g. if the source code of the project depends on an older API of a
+    dependency than some of the external libraries.*/
+    implementation('commons-codec:commons-codec:1.9') {
+        force = true
+    }
+
+    //Disabling resolution of transitive dependencies
+    //only the main artifact will be resolved for the declared dependency
+    implementation('com.google.guava:guava:23.0') {
+        transitive = false
+    }
+
 }
 
 //获取properties gradle -q -PcommandLineProjectProp=commandLineProjectPropValue -Dorg.gradle.project.systemProjectProp=systemPropertyValue printProps

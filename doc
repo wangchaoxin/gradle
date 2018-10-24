@@ -57,9 +57,39 @@ Project properties
         org.gradle.project.foo=bar
 Upgrading the Wrapper version
     > ./gradlew wrapper --gradle-version 4.2.1
- Checking the Wrapper version after upgrading
+Checking the Wrapper version after upgrading
      ./gradlew -v
-
+download the lastest version of snapshot
+    Override default 24h module caching in Gradle:
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+    Then, latest.integration will work with each Maven snapshot:
+    dependencies {
+        compile 'projGroup:projName:latest.integration'
+    }
+Resolving version conflicts
+    Gradle resolves version conflicts by picking the highest version of a module.
+    1 Configuring any dependency (transitive or not) as forced. This approach is useful if the
+      dependency in conflict is a transitive dependency.
+Using dynamic versions and changing modules
+    There are many situations when you want to use the latest version of a particular module
+    dependency, or the latest in a range of versions. This can be a requirement during development, or
+    you may be developing a library that is designed to work with a range of dependency versions. You
+    can easily depend on these constantly changing dependencies by using a dynamic version. A
+    dynamic version can be either a version range (e.g. 2.+) or it can be a placeholder for the latest
+    version available e.g. latest.integration.
+    Alternatively, the module you request can change over time even for the same version, a so-called
+    changing version. An example of this type of changing module is a Maven SNAPSHOT module, which
+    always points at the latest artifact published. In other words, a standard Maven snapshot is a
+    module that is continually evolving, it is a "changing module"
+Controlling dependency caching from the command line
+    Avoiding network access with offline mode
+        --offline command line switch tells Gradle to always use dependency modules from the cache,
+        regardless if they are due to be checked again
+    Forcing all dependencies to be re-resolved
+        --refresh-dependencies option tells Gradle to ignore all cached entries for resolved modules
+        and artifacts.
 
 
 
